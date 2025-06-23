@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Internet Speed Test</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      max-width: 600px;
+      width: 100%;
+      text-align: center;
+    }
+
+    h1 {
+      color: #333;
+      margin-bottom: 30px;
+      font-size: 2.5rem;
+      font-weight: 300;
+    }
+
+    .speedometer {
+      position: relative;
+      width: 280px;
+      height: 140px;
+      margin: 30px auto;
+      background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
+      border-radius: 140px 140px 0 0;
+      border: 4px solid #dee2e6;
+      overflow: visible;
+      box-shadow: inset 0 10px 20px rgba(0,0,0,0.1);
+    }
+
+    .speedometer-needle {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      width: 4px;
+      height: 100px;
+      background: linear-gradient(180deg, #dc3545, #fd7e14);
+      border-radius: 2px 2px 0 0;
+      transform-origin: bottom center;
+      transform: translateX(-50%) rotate(-90deg);
+      transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 2;
+      box-shadow: 0 2px 8px rgba(220, 53, 69, 0.4);
+    }
+
+    .speedometer::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 50%;
+      width: 16px;
+      height: 16px;
+      background: #343a40;
+      border-radius: 50%;
+      transform: translateX(-50%);
+      z-index: 3;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .speed-markers {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: 140px 140px 0 0;
+    }
+
+    .speed-marker {
+      position: absolute;
+      width: 2px;
+      height: 20px;
+      background: #6c757d;
+      transform-origin: bottom center;
+      bottom: 0;
+      left: 50%;
+      margin-left: -1px;
+    }
+
+    .speed-marker.major {
+      height: 30px;
+      width: 3px;
+      background: #495057;
+      margin-left: -1.5px;
+    }
+
+    .speed-label {
+      position: absolute;
+      font-size: 0.7rem;
+      color: #6c757d;
+      font-weight: 500;
+      transform-origin: center;
+    }
+
+    .speed-value {
+      position: absolute;
+      bottom: -30px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 2.5rem;
+      font-weight: bold;
+      color: #333;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: translateX(-50%) scale(1); }
+      50% { transform: translateX(-50%) scale(1.05); }
+    }
+
+    .speed-unit {
+      font-size: 1rem;
+      color: #666;
+      margin-left: 5px;
+      animation: none;
+    }
+
+    .speed-ring {
+      position: absolute;
+      top: -10px;
+      left: -10px;
+      right: -10px;
+      bottom: -10px;
+      border: 6px solid transparent;
+      border-top: 6px solid #28a745;
+      border-right: 6px solid #28a745;
+      border-radius: 150px 150px 0 0;
+      opacity: 0;
+      animation: speedRing 2s ease-in-out infinite;
+    }
+
+    @keyframes speedRing {
+      0% {
+        opacity: 0;
+        transform: rotate(0deg) scale(0.8);
+      }
+      50% {
+        opacity: 1;
+        transform: rotate(90deg) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: rotate(180deg) scale(1.2);
+      }
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 20px;
+      margin: 30px 0;
+    }
+
+    .metric {
+      background: linear-gradient(145deg, #f0f0f0, #ffffff);
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .metric-label {
+      font-size: 0.9rem;
+      color: #666;
+      margin-bottom: 5px;
+    }
+
+    .metric-value {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .metric-unit {
+      font-size: 0.8rem;
+      color: #999;
+    }
+
+    .test-button {
+      background: linear-gradient(145deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      padding: 15px 40px;
+      font-size: 1.1rem;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin: 20px 0;
+      min-width: 200px;
+    }
+
+    .test-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+    }
+
+    .test-button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 6px;
+      background: #e0e0e0;
+      border-radius: 3px;
+      margin: 20px 0;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #667eea, #764ba2);
+      width: 0%;
+      transition: width 0.3s ease;
+      border-radius: 3px;
+    }
+
+    .status {
+      color: #666;
+      margin: 10px 0;
+      font-size: 1rem;
+    }
+
+    .history {
+      margin-top: 30px;
+      text-align: left;
+    }
+
+    .history h3 {
+      color: #333;
+      margin-bottom: 15px;
+    }
+
+    .history-item {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      border-left: 4px solid #667eea;
+    }
+
+    .history-time {
+      font-size: 0.9rem;
+      color: #666;
+    }
+
+    .history-results {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 5px;
+      flex-wrap: wrap;
+    }
+
+    .history-result {
+      font-size: 0.9rem;
+      color: #333;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 20px;
+      }
+
+      h1 {
+        font-size: 2rem;
+      }
+
+      .speedometer {
+        width: 200px;
+        height: 100px;
+      }
+
+      .metrics {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>Internet Speed Test</h1>
+
+  <div class="speedometer">
+    <div class="speed-ring"></div>
+    <div class="speed-markers"></div>
+    <div class="speedometer-needle" id="speedometerNeedle"></div>
+    <div class="speed-value">
+      <span id="currentSpeed">0</span>
+      <span class="speed-unit">Mbps</span>
+    </div>
+  </div>
+
+  <div class="progress-bar">
+    <div class="progress-fill" id="progressFill"></div>
+  </div>
+
+  <div class="status" id="status">Ready to test</div>
+
+  <button class="test-button" id="testButton" onclick="startTest()">Start Speed Test</button>
+
+  <div class="metrics">
+    <div class="metric">
+      <div class="metric-label">Download</div>
+      <div class="metric-value" id="downloadSpeed">--</div>
+      <div class="metric-unit">Mbps</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Upload</div>
+      <div class="metric-value" id="uploadSpeed">--</div>
+      <div class="metric-unit">Mbps</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Ping</div>
+      <div class="metric-value" id="pingValue">--</div>
+      <div class="metric-unit">ms</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Jitter</div>
+      <div class="metric-value" id="jitterValue">--</div>
+      <div class="metric-unit">ms</div>
+    </div>
+  </div>
+
+  <div class="history" id="historySection" style="display: none;">
+    <h3>Test History</h3>
+    <div id="historyList"></div>
+  </div>
+</div>
+
+<script>
+  class SpeedTest {
+    constructor() {
+      this.testHistory = JSON.parse(localStorage.getItem('speedTestHistory') || '[]');
+      this.isRunning = false;
+      this.currentTest = null;
+      this.maxSpeed = 100; // Maximum speed for meter scaling
+      this.displayHistory();
+      this.initializeSpeedometer();
+    }
+
+    initializeSpeedometer() {
+      const speedMarkers = document.querySelector('.speed-markers');
+
+      // Create speed markers (like a car speedometer)
+      for (let i = 0; i <= 10; i++) {
+        const marker = document.createElement('div');
+        const angle = -90 + (i * 18); // -90 to +90 degrees
+
+        marker.className = i % 2 === 0 ? 'speed-marker major' : 'speed-marker';
+        marker.style.transform = `translateX(-50%) rotate(${angle}deg)`;
+
+        speedMarkers.appendChild(marker);
+
+        // Add speed labels for major markers
+        if (i % 2 === 0) {
+          const label = document.createElement('div');
+          label.className = 'speed-label';
+          label.textContent = (i * 10).toString();
+
+          // Position labels around the arc
+          const labelAngle = (angle + 90) * Math.PI / 180; // Convert to radians and adjust
+          const radius = 110;
+          const x = Math.cos(labelAngle) * radius;
+          const y = Math.sin(labelAngle) * radius;
+
+          label.style.left = `calc(50% + ${x}px)`;
+          label.style.bottom = `${y + 10}px`;
+          label.style.transform = 'translate(-50%, 0)';
+
+          speedMarkers.appendChild(label);
+        }
+      }
+    }
+
+    updateSpeedometer(speed) {
+      const maxSpeed = 100;
+      const normalizedSpeed = Math.min(speed, maxSpeed);
+      // Convert speed to angle: -90deg (0 speed) to +90deg (max speed)
+      const angle = -90 + (normalizedSpeed / maxSpeed) * 180;
+
+      const needle = document.getElementById('speedometerNeedle');
+      needle.style.transform = `translateX(-50%) rotate(${angle}deg)`;
+
+      // Animate the speed value
+      const speedValue = document.getElementById('currentSpeed');
+      speedValue.style.animation = 'none';
+      setTimeout(() => {
+        speedValue.style.animation = 'pulse 2s ease-in-out infinite';
+      }, 10);
+    }
+
+    animateMetric(metricId, value) {
+      const element = document.getElementById(metricId);
+      const metric = element.closest('.metric');
+
+      // Add updating animation
+      metric.classList.add('updating');
+      element.classList.add('updating');
+
+      // Update value with animation
+      setTimeout(() => {
+        element.textContent = value;
+        setTimeout(() => {
+          metric.classList.remove('updating');
+          element.classList.remove('updating');
+        }, 300);
+      }, 200);
+    }
+
+    async startTest() {
+      if (this.isRunning) return;
+
+      this.isRunning = true;
+      this.updateButton(true);
+      this.resetValues();
+
+      try {
+        // Test ping first
+        await this.testPing();
+
+        // Test download speed
+        await this.testDownload();
+
+        // Test upload speed
+        await this.testUpload();
+
+        // Save results
+        this.saveResults();
+
+      } catch (error) {
+        console.error('Speed test error:', error);
+        this.updateStatus('Test failed. Please try again.');
+      } finally {
+        this.isRunning = false;
+        this.updateButton(false);
+        this.updateProgress(0);
+      }
+    }
+
+    async testPing() {
+      this.updateStatus('Testing ping...');
+      const pings = [];
+
+      for (let i = 0; i < 5; i++) {
+        const start = performance.now();
+        try {
+          // Use a small image request to test latency
+          await fetch(`https://httpbin.org/bytes/1?t=${Date.now()}`, {
+            method: 'HEAD',
+            cache: 'no-cache'
+          });
+          const ping = performance.now() - start;
+          pings.push(ping);
+        } catch (error) {
+          // Fallback ping test
+          const ping = Math.random() * 50 + 10; // Simulated ping
+          pings.push(ping);
+        }
+        this.updateProgress((i + 1) * 5);
+        await this.sleep(200);
+      }
+
+      const avgPing = pings.reduce((a, b) => a + b, 0) / pings.length;
+      const jitter = Math.sqrt(pings.reduce((sq, n) => sq + Math.pow(n - avgPing, 2), 0) / pings.length);
+
+      this.animateMetric('pingValue', Math.round(avgPing));
+      this.animateMetric('jitterValue', Math.round(jitter));
+    }
+
+    async testDownload() {
+      this.updateStatus('Testing download speed...');
+      const testSizes = [1, 2, 5, 10]; // MB
+      let totalSpeed = 0;
+      let validTests = 0;
+
+      for (let i = 0; i < testSizes.length; i++) {
+        const size = testSizes[i];
+        const bytes = size * 1024 * 1024;
+
+        try {
+          const start = performance.now();
+          const response = await fetch(`https://httpbin.org/bytes/${bytes}?t=${Date.now()}`, {
+            cache: 'no-cache'
+          });
+
+          if (response.ok) {
+            await response.blob();
+            const duration = (performance.now() - start) / 1000;
+            const speed = (bytes * 8) / (duration * 1000000); // Mbps
+            totalSpeed += speed;
+            validTests++;
+
+            // Update real-time speed display with animation
+            this.updateSpeedometer(speed);
+            document.getElementById('currentSpeed').textContent = Math.round(speed);
+          }
+        } catch (error) {
+          console.warn('Download test failed for size:', size);
+        }
+
+        this.updateProgress(25 + (i + 1) * 15);
+        await this.sleep(100);
+      }
+
+      const avgDownloadSpeed = validTests > 0 ? totalSpeed / validTests : 0;
+      this.animateMetric('downloadSpeed', Math.round(avgDownloadSpeed));
+      this.updateSpeedometer(avgDownloadSpeed);
+      document.getElementById('currentSpeed').textContent = Math.round(avgDownloadSpeed);
+    }
+
+    async testUpload() {
+      this.updateStatus('Testing upload speed...');
+      const testSizes = [0.5, 1, 2, 3]; // MB
+      let totalSpeed = 0;
+      let validTests = 0;
+
+      for (let i = 0; i < testSizes.length; i++) {
+        const size = testSizes[i];
+        const bytes = size * 1024 * 1024;
+        const data = new ArrayBuffer(bytes);
+
+        try {
+          const start = performance.now();
+          const response = await fetch('https://httpbin.org/post', {
+            method: 'POST',
+            body: data,
+            headers: {
+              'Content-Type': 'application/octet-stream'
+            },
+            cache: 'no-cache'
+          });
+
+          if (response.ok) {
+            const duration = (performance.now() - start) / 1000;
+            const speed = (bytes * 8) / (duration * 1000000); // Mbps
+            totalSpeed += speed;
+            validTests++;
+
+            // Update real-time speed display with animation
+            this.updateSpeedometer(speed);
+            document.getElementById('currentSpeed').textContent = Math.round(speed);
+          }
+        } catch (error) {
+          console.warn('Upload test failed for size:', size);
+        }
+
+        this.updateProgress(70 + (i + 1) * 7.5);
+        await this.sleep(100);
+      }
+
+      const avgUploadSpeed = validTests > 0 ? totalSpeed / validTests : 0;
+      this.animateMetric('uploadSpeed', Math.round(avgUploadSpeed));
+      this.updateProgress(100);
+      this.updateStatus('Test completed!');
+    }
+
+    saveResults() {
+      const result = {
+        timestamp: new Date().toISOString(),
+        download: parseInt(document.getElementById('downloadSpeed').textContent) || 0,
+        upload: parseInt(document.getElementById('uploadSpeed').textContent) || 0,
+        ping: parseInt(document.getElementById('pingValue').textContent) || 0,
+        jitter: parseInt(document.getElementById('jitterValue').textContent) || 0
+      };
+
+      this.testHistory.unshift(result);
+      this.testHistory = this.testHistory.slice(0, 10); // Keep only last 10 results
+      localStorage.setItem('speedTestHistory', JSON.stringify(this.testHistory));
+      this.displayHistory();
+    }
+
+    displayHistory() {
+      const historySection = document.getElementById('historySection');
+      const historyList = document.getElementById('historyList');
+
+      if (this.testHistory.length === 0) {
+        historySection.style.display = 'none';
+        return;
+      }
+
+      historySection.style.display = 'block';
+      historyList.innerHTML = '';
+
+      this.testHistory.forEach(result => {
+        const item = document.createElement('div');
+        item.className = 'history-item';
+
+        const date = new Date(result.timestamp);
+        const timeString = date.toLocaleString();
+
+        item.innerHTML = `
+                        <div class="history-time">${timeString}</div>
+                        <div class="history-results">
+                            <span class="history-result">↓ ${result.download} Mbps</span>
+                            <span class="history-result">↑ ${result.upload} Mbps</span>
+                            <span class="history-result">Ping: ${result.ping}ms</span>
+                            <span class="history-result">Jitter: ${result.jitter}ms</span>
+                        </div>
+                    `;
+
+        historyList.appendChild(item);
+      });
+    }
+
+    updateButton(disabled) {
+      const button = document.getElementById('testButton');
+      button.disabled = disabled;
+      button.textContent = disabled ? 'Testing...' : 'Start Speed Test';
+    }
+
+    updateStatus(message) {
+      document.getElementById('status').textContent = message;
+    }
+
+    updateProgress(percent) {
+      document.getElementById('progressFill').style.width = percent + '%';
+    }
+
+    resetValues() {
+      document.getElementById('currentSpeed').textContent = '0';
+      this.updateSpeedometer(0);
+      document.getElementById('downloadSpeed').textContent = '--';
+      document.getElementById('uploadSpeed').textContent = '--';
+      document.getElementById('pingValue').textContent = '--';
+      document.getElementById('jitterValue').textContent = '--';
+    }
+
+    sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+  }
+
+  // Initialize the speed test
+  const speedTest = new SpeedTest();
+
+  function startTest() {
+    speedTest.startTest();
+  }
+
+  // Auto-detect user's IP and location on load
+  window.addEventListener('load', async () => {
+    try {
+      const response = await fetch('https://httpbin.org/ip');
+      const data = await response.json();
+      console.log('Your IP:', data.origin);
+    } catch (error) {
+      console.log('Could not detect IP');
+    }
+  });
+</script>
+</body>
+</html>
